@@ -1,0 +1,2 @@
+Invoking command in '/home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo/build/opencv_demo': /usr/bin/cmake /home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo -DCMAKE_INSTALL_PREFIX=/home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo/install/opencv_demo
+Invoked command in '/home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo/build/opencv_demo' returned '1': /usr/bin/cmake /home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo -DCMAKE_INSTALL_PREFIX=/home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo/install/opencv_demo
