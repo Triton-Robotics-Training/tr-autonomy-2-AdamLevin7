@@ -1,4 +1,4 @@
-#include <stdlib.h>
+/*#include <stdlib.h>
 #include <functional>
 
 #include "rclcpp/rclcpp.hpp"
@@ -33,7 +33,6 @@ private:
 
         cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         cv::waitKey(3);
-        img = msg;
         pub_.publish(cv_ptr->toImageMsg());
     }
 
@@ -65,4 +64,5 @@ int main(int argc, char** argv)
     rclcpp::spin(std::make_shared<ImageConverter>());
     rclcpp::shutdown();
     return 0;
-}
+} 
+*/
