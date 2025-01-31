@@ -64,7 +64,8 @@ private:
   void timer_callback(){
     try
   {
-    RCLCPP_INFO(this->get_logger(), "Received image with height: %d, width: %d", img->height, img->width);
+    if(img != nullptr){
+      RCLCPP_INFO(this->get_logger(), "Received image with height: %d, width: %d", img->height, img->width);
     cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
     cv::Mat image = cv_ptr->image;
     
@@ -112,6 +113,8 @@ private:
   msg.data = value;
   angle_publisher_->publish(msg);
   }
+    }
+    
   catch (cv_bridge::Exception &e)
   {
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
