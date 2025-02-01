@@ -66,6 +66,24 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
-    }
+        "variant": "cpp",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "codecvt": "cpp",
+        "future": "cpp",
+        "shared_mutex": "cpp",
+        "cfenv": "cpp"
+    },
+    "ros.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/adam/Documents/tr-autonomy-2-AdamLevin7/install/spinnyrobot/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/adam/Documents/tr-autonomy-2-AdamLevin7/install/spinnyrobot/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "cmake.sourceDirectory": "/home/adam/Documents/tr-autonomy-2-AdamLevin7/src/opencv_demo"
 }

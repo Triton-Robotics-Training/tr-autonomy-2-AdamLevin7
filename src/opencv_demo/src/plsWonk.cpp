@@ -17,14 +17,14 @@ class plsWonk : public rclcpp::Node {
   
 public:
   plsWonk() : Node("plsWonk") {
+    angle_subscription_ = this->create_subscription<std_msgs::msg::Float32>(
+      "/current_angle", 10, std::bind(&plsWonk::angleCallback, this, std::placeholders::_1));
     image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
         "/robotcam", 10,
         std::bind(&plsWonk::imageCallback, this, std::placeholders::_1));
-    angle_subscription_ = this->create_subscription<std_msgs::msg::Float32>(
-      "/current_angle", 10, std::bind(&plsWonk::angleCallback, this, std::placeholders::_1));
-    timer_ = this->create_wall_timer(
+    /*timer_ = this->create_wall_timer(
         std::chrono::milliseconds(500),
-        std::bind(&plsWonk::timer_callback, this));
+        std::bind(&plsWonk::timer_callback, this)); */
     angle_publisher_ = this->create_publisher<std_msgs::msg::Float32>("/desired_angle", 10);    
     }
   
@@ -39,7 +39,6 @@ public:
     {
         cv::destroyWindow(std::string "OPENCV_WINDOW");
     } */
- 
 private:
 
 //    image_transport::ImageTransport it;
@@ -48,71 +47,90 @@ private:
   //image_transport::Publisher pub_;
   //void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg);
   std_msgs::msg::Float32::SharedPtr angle;
-  sensor_msgs::msg::Image::ConstSharedPtr img;
-  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
+  //sensor_msgs::msg::Image::ConstSharedPtr img;
   rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr angle_subscription_;
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
   rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr angle_publisher_;
-  rclcpp::TimerBase::SharedPtr timer_;
+  //rclcpp::TimerBase::SharedPtr timer_;
   
   void angleCallback(const std_msgs::msg::Float32::SharedPtr ang){
-    RCLCPP_INFO(this->get_logger(), "Received value: %f", ang->data);
-    angle = ang;
+    //if(ang){
+      RCLCPP_INFO(this->get_logger(), "Received value: %f", ang->data);
+      angle = ang;
+    //}   
 }
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
-    img = msg;
-  }
-  void timer_callback(){
+  /*void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg) {
+//    if(msg){
+//      RCLCPP_INFO(this->get_logger(), "are you first: %d, width: %d", img->height, img->width);
+      img = msg;
+    }
+//  } */
+  void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg){
+  //if(msg && angle){
+    RCLCPP_INFO(this->get_logger(), "hello");
     try
   {
-    if(img != nullptr){
-      RCLCPP_INFO(this->get_logger(), "Received image with height: %d, width: %d", img->height, img->width);
-    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
-    cv::Mat image = cv_ptr->image;
-    
+    RCLCPP_INFO(this->get_logger(), "are you first: %d, width: %d", msg->height, msg->width);
+    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    if(cv_ptr){
+      RCLCPP_INFO(this->get_logger(), "do you get here: %d, width: %d", msg->height, msg->width);
+      cv::medianBlur(cv_ptr->image, cv_ptr->image, 3);
+      cv::Mat hsv_image;
+      cv::cvtColor(cv_ptr->image, hsv_image, cv::COLOR_BGR2HSV);
 
-    // Find red pixels
-    cv::Mat lower_red_mask;
-    cv::Mat upper_red_mask;
-    cv::inRange(image, cv::Scalar(0, 0, 100), cv::Scalar(100, 100, 255), lower_red_mask); 
-    cv::inRange(image, cv::Scalar(160, 100, 100), cv::Scalar(179, 255, 255), upper_red_mask);
+      // Find red pixels
+      cv::Mat lower_red_mask;
+      cv::Mat upper_red_mask;
+      cv::inRange(hsv_image, cv::Scalar(0, 0, 100), cv::Scalar(10, 255, 255), lower_red_mask); 
+      cv::inRange(hsv_image, cv::Scalar(160, 100, 100), cv::Scalar(179, 255, 255), upper_red_mask);
 
-    // Find contours of red regions
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(upper_red_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-    
-    cv::Point center;
-    cv::Moments m = cv::moments(contours[0]);
-    center = cv::Point(m.m10 / m.m00, m.m01 / m.m00);
-    double x = center.x;
+      cv::Mat red_hue_image;
+      cv::addWeighted(lower_red_mask, 1.0, upper_red_mask, 1.0, 0.0, red_hue_image);
+  
+      cv::GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
 
-    // Calculate center of the largest red contour
-    /*if (!contours.empty())
-    {
-      int max_area = 0;
-      cv::Point center;
-      for (const auto &contour : contours)
-      {
-        int area = cv::contourArea(contour);
-        if (area > max_area)
-        {
-          max_area = area;
-          cv::Moments m = cv::moments(contour);
-          center = cv::Point(m.m10 / m.m00, m.m01 / m.m00);
-        }
-      }
+      // Find contours of red regions
+      std::vector<cv::Vec3f> circles;
+      cv::HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows/8, 100, 20, 0, 0);
+      double x;
+      if(circles.size() == 0) std::exit(-1);
+      
+      cv::Point center(std::round(circles[0][0]), std::round(circles[0][1]));
+      int radius = std::round(circles[0][2]);
+      cv::circle(hsv_image, center, radius, cv::Scalar(0, 255, 0), 5);
       x = center.x;
-      RCLCPP_INFO(this->get_logger(), "Center of red object: (%d, %d)", center.x, center.y);
-    } */
-  double PI = 3.14159265; //idk how to get actual pi
-  double resX = 640; //resolution i think
-  double FOV = 90; //might be 100? not really sure
-  //double angle = FOV/resX*x*PI/180.0+ang;
-  float value = angle->data+FOV/resX*x*PI/180.0;
-  cv::waitKey(0);
-  auto msg = std_msgs::msg::Float32();
-  msg.data = value;
-  angle_publisher_->publish(msg);
-  }
+      RCLCPP_INFO(this->get_logger(), "what about here huhhhhhh?: %d, width: %d", msg->height, msg->width);
+
+
+      // Calculate center of the largest red contour
+      /*if (!contours.empty())
+      {
+        int max_area = 0;
+        cv::Point center;
+        for (const auto &contour : contours)
+        {
+          int area = cv::contourArea(contour);
+          if (area > max_area)
+          {
+            max_area = area;
+            cv::Moments m = cv::moments(contour);
+            center = cv::Point(m.m10 / m.m00, m.m01 / m.m00);
+          }
+        }
+        x = center.x;
+        RCLCPP_INFO(this->get_logger(), "Center of red object: (%d, %d)", center.x, center.y);
+      } */
+    double PI = 3.14159265; //idk how to get actual pi
+    double resX = 640; //resolution i think
+    double FOV = 90; //might be 100? not really sure
+    //double angle = FOV/resX*x*PI/180.0+ang;
+    float value = angle->data+FOV/resX*x*PI/180.0;
+    auto val = std_msgs::msg::Float32();
+    val.data = value;
+    RCLCPP_INFO(this->get_logger(), "its the final value %f", val.data);
+    angle_publisher_->publish(val);
+    }
+    
     }
     
   catch (cv_bridge::Exception &e)
@@ -120,7 +138,6 @@ private:
     RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
   }
   }
-
   //void plsWonk::find_red(const sensor_msgs::msg::Image img);
 
   //rclcpp::Subscription<sensor_msgs::msg::Image::ConstSharedPtr &msg>:: img_subscription_;
@@ -159,13 +176,13 @@ private:
     rclcpp::init(argc, argv);
     // create a ros2 node
     auto node = std::make_shared<plsWonk>();
-  
+    //rclcpp::executors::MultiThreadedExecutor executor;
+    //executor.add_node(node);
+    //executor.spin();
     // process ros2 callbacks until receiving a SIGINT (ctrl-c)
   
     // process ros2 callbacks until receiving a SIGINT (ctrl-c)
-    while (rclcpp::ok()) {
-      rclcpp::spin_some(node);
-}
+    rclcpp::spin(node);
     rclcpp::shutdown();
   return 0;
 }
