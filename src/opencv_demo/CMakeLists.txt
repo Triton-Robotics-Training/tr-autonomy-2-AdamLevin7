@@ -14,20 +14,6 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(OpenCV REQUIRED)
 
-#add_executable(minimal_opencv_ros2_node src/minimal_opencv_ros2_node.cpp)
-#ament_target_dependencies(minimal_opencv_ros2_node rclcpp std_msgs sensor_msgs cv_bridge image_transport OpenCV)
-#install(TARGETS
-#   minimal_opencv_ros2_node
-#   DESTINATION lib/${PROJECT_NAME}
-# )
-
-add_executable(plsWonk src/plsWonk.cpp)
-ament_target_dependencies(plsWonk rclcpp std_msgs sensor_msgs cv_bridge image_transport OpenCV)
-install(TARGETS
-   plsWonk
-   DESTINATION lib/${PROJECT_NAME}
- )
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -39,9 +25,16 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}/
-)
+
+add_executable(ImageConverter src/ImageConverter.cpp src/ImageConverter.h)
+ament_target_dependencies(ImageConverter rclcpp std_msgs sensor_msgs cv_bridge image_transport OpenCV)
+install(TARGETS
+   ImageConverter
+   DESTINATION lib/${PROJECT_NAME}
+ )
+#install(DIRECTORY
+#  launch
+#  DESTINATION share/${PROJECT_NAME}/
+#)
 
 ament_package()
